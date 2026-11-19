@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="header.png" alt=",Quantix is a clean-room, MIT-licensed mediator" />
+<img src="header.png" alt="Quantix is a clean-room, Apache-2.0-licensed mediator" />
 
 </div>
 
 > A source-generated, AOT-friendly mediator for .NET. Zero runtime reflection, linker-safe, fast.
 
-Quantix is a clean-room, MIT-licensed mediator. It moves every decision a reflection-based
+Quantix is a clean-room, Apache-2.0-licensed mediator. It moves every decision a reflection-based
 mediator makes at *runtime* — handler discovery, generic closing, dispatch — to *compile time*,
 using a Roslyn incremental source generator. The result: no startup assembly scan, no per-call
 reflection, no trim or Native AOT warnings, and a missing handler reported as a build error

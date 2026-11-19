@@ -30,6 +30,9 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Third-party notices are current
+        run: python3 eng/notices.py --check
+
       - name: Restore
         run: dotnet restore Quantix.slnx
 

@@ -39,7 +39,7 @@
     <Authors>Suresh Subramanian</Authors>
     <Product>Quantix</Product>
     <Copyright>Copyright (c) Suresh Subramanian</Copyright>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
 
   <PropertyGroup Label="Versioning">

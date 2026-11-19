@@ -40,6 +40,11 @@ jobs:
         run: dotnet restore Quantix.slnx
 
       - name: Build
+      - name: Third-party notices are current
+        # Fails when a pinned package is unclassified, a bundled package's version drifts from
+        # its notice, or THIRD-PARTY-NOTICES.txt was not regenerated (eng/notices.py).
+        run: python3 eng/notices.py --check
+
         run: dotnet build Quantix.slnx --configuration Release --no-restore
 
       - name: Test

@@ -35,10 +35,16 @@ tagging a commit `v1.0.0` produces package version `1.0.0`.
 
 ### Changed
 
+- **Licence:** Quantix is licensed under Apache-2.0. The package metadata
+  (previously MIT) and the README now match the `LICENSE` file.
+- The package now ships `LICENSE` and a generated `THIRD-PARTY-NOTICES.txt`,
+  crediting the MIT-licensed polyfill code (PolySharp and .NET runtime
+  sources) compiled into the generator. CI fails if the notices drift from the
+  pinned packages (`eng/notices.py --check`).
 - The repository builds with the .NET 11 SDK (`global.json` pins 11.0.100,
   rolling forward to later feature bands).
-- Build tooling updated: Microsoft.NET.Test.Sdk 18.12.0, xunit 2.9.3,
-  BenchmarkDotNet 0.15.8, MinVer 8.0.0.
+- Build tooling updated: PolySharp 1.17.0, Microsoft.NET.Test.Sdk 18.12.0,
+  xunit 2.9.3, BenchmarkDotNet 0.15.8, MinVer 8.0.0.
 
 ## [1.0.1] - 2026-05-26
 

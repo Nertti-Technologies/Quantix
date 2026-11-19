@@ -20,7 +20,22 @@ Quantix is a single solution, `Quantix.slnx`:
     dotnet pack    src/Quantix/Quantix.csproj -c Release
 
 `dotnet pack` produces the single `Quantix` package: the generator under
-`analyzers/dotnet/cs/` and the abstractions under `lib/`.
+`analyzers/dotnet/cs/`, the abstractions under `lib/`, and `LICENSE` plus
+`THIRD-PARTY-NOTICES.txt` at the package root.
+
+### Third-party notices
+
+`THIRD-PARTY-NOTICES.txt` is generated — never edit it by hand. Its inputs are
+`notices/components.json` and the verbatim licence texts in `notices/licenses/`.
+
+    python3 eng/notices.py           # regenerate
+    python3 eng/notices.py --check   # the gate CI runs
+
+Every package pinned in `Directory.Packages.props` must be classified in
+`components.json` as `bundled` (its code ships in the package and needs a notice)
+or `not-distributed` (with the reason). Adding or upgrading a bundled package
+means fetching its licence text for that exact version, recording the source URL
+and retrieval time, and regenerating — in the same change that adds the package.
 
 To check the reflection-free guarantee, Native-AOT-publish the sample — it must
 produce **zero** trim or AOT warnings (the build treats warnings as errors):
