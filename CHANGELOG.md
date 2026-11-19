@@ -32,6 +32,10 @@ tagging a commit `v1.0.0` produces package version `1.0.0`.
 - The sample's behaviors logged whole messages and results, which carry user
   input; they now log the message type only. The sample also length-limits
   its free-text route values and lowers ASP.NET request logging to Warning.
+- The sample's `/visit/{page}` count was shared across all pages, so a first
+  visit to one page could report "Visit #3"; it is now counted per page, with
+  at most 1,000 distinct pages tracked. A route value longer than 64
+  characters now returns 400 Bad Request instead of 404 Not Found.
 - The package's project and repository URLs now point at the current
   repository (`Nertti-Technologies/Quantix`).
 

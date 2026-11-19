@@ -1,19 +1,46 @@
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Quantix;
 
 namespace Quantix.Sample;
 
-/// <summary>A command that records a page visit and returns the running visit count.</summary>
+/// <summary>
+/// A command that records a page visit and returns that page's running visit count, or
+/// <c>0</c> when the visit was not recorded because the page limit is reached.
+/// </summary>
 /// <param name="Page">The page that was visited.</param>
 public sealed record RecordVisit(string Page) : ICommand<int>;
 
-/// <summary>Handles <see cref="RecordVisit"/> — increments and returns an in-memory counter.</summary>
+/// <summary>
+/// Handles <see cref="RecordVisit"/> — keeps an in-memory counter per page. The number of
+/// distinct pages is capped so that requests for ever-new page names cannot grow memory
+/// without bound; once the cap is reached, visits to pages not yet seen are not recorded.
+/// </summary>
 public sealed class RecordVisitHandler : ICommandHandler<RecordVisit, int>
 {
-    private static int _count;
+    /// <summary>The most distinct pages the sample tracks (a sample-sized limit, not a tuned figure).</summary>
+    public const int MaxPages = 1_000;
+
+    private static readonly ConcurrentDictionary<string, StrongBox<int>> Counts = new(StringComparer.Ordinal);
 
     /// <inheritdoc />
     public ValueTask<int> Handle(RecordVisit command, CancellationToken ct)
-        => new(Interlocked.Increment(ref _count));
+    {
+        // The count check and the insert are not atomic, so concurrent first visits can
+        // overshoot MaxPages by a few entries; the bound still holds to within the request
+        // concurrency, which is all the sample needs.
+        if (!Counts.TryGetValue(command.Page, out StrongBox<int>? box))
+        {
+            if (Counts.Count >= MaxPages)
+            {
+                return new(0);
+            }
+
+            box = Counts.GetOrAdd(command.Page, static _ => new StrongBox<int>());
+        }
+
+        return new(Interlocked.Increment(ref box.Value));
+    }
 }
 
 /// <summary>
