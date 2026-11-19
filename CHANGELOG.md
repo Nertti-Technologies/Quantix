@@ -32,6 +32,8 @@ tagging a commit `v1.0.0` produces package version `1.0.0`.
 - The sample's behaviors logged whole messages and results, which carry user
   input; they now log the message type only. The sample also length-limits
   its free-text route values and lowers ASP.NET request logging to Warning.
+- The package's project and repository URLs now point at the current
+  repository (`Nertti-Technologies/Quantix`).
 
 ### Performance
 
@@ -110,6 +112,6 @@ is no startup scan, no per-call reflection, and no trim or AOT warnings.
 - A single NuGet package, `Quantix`, bundling the abstractions and the generator.
 - Native AOT and trimming support, with zero trim or AOT warnings.
 
-[Unreleased]: https://github.com/isureshsubramanian/Quantix/compare/v1.0.1...HEAD
-[1.0.1]: https://github.com/isureshsubramanian/Quantix/releases/tag/v1.0.1
-[1.0.0]: https://github.com/isureshsubramanian/Quantix/releases/tag/v1.0.0
+[Unreleased]: https://github.com/Nertti-Technologies/Quantix/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/Nertti-Technologies/Quantix/releases/tag/v1.0.1
+[1.0.0]: https://github.com/Nertti-Technologies/Quantix/releases/tag/v1.0.0
