@@ -1,5 +1,6 @@
 // Quantix.Generator — the incremental source generator entry point (design section 6).
 
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -24,15 +25,17 @@ public sealed class QuantixGenerator : IIncrementalGenerator
     /// <param name="context">The initialization context supplied by the Roslyn host.</param>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        // One candidate type can yield several results — a class implementing two handler
+        // interfaces is two handlers — so the transform returns an equatable array to flatten.
         IncrementalValuesProvider<DiscoveryResult> discovered = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (node, _) => IsCandidateType(node),
                 transform: static (syntaxContext, cancellationToken) => Transform(syntaxContext, cancellationToken))
-            .Where(static result => result is not null)
-            .Select(static (result, _) => result!);
+            .SelectMany(static (results, _) => results.AsImmutableArray());
 
         // A second syntax provider collects concrete instantiations of generic messages from
-        // object-creation sites — every `new GetById<Customer>(...)` in the compilation.
+        // object-creation sites — every `new GetById<Customer>(...)` in the compilation, and
+        // every target-typed `GetById<Customer> q = new(...)`.
         IncrementalValuesProvider<DiscoveredMessage> instantiations = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (node, _) => IsGenericConstruction(node),
@@ -62,44 +65,64 @@ public sealed class QuantixGenerator : IIncrementalGenerator
         => node is TypeDeclarationSyntax { BaseList: not null };
 
     /// <summary>
-    /// The semantic transform: resolves the candidate's symbol and classifies it as a Quantix
-    /// handler, pipeline behavior or message. Returns null when the type is none of those.
+    /// The semantic transform: resolves the candidate's symbol and classifies it as Quantix
+    /// handlers (one per implemented handler interface), a pipeline behavior or a message.
+    /// Returns an empty array when the type is none of those.
     /// </summary>
-    private static DiscoveryResult? Transform(GeneratorSyntaxContext context, CancellationToken cancellationToken)
+    private static EquatableArray<DiscoveryResult> Transform(GeneratorSyntaxContext context, CancellationToken cancellationToken)
     {
         var declaration = (TypeDeclarationSyntax)context.Node;
 
         if (context.SemanticModel.GetDeclaredSymbol(declaration, cancellationToken) is not INamedTypeSymbol type)
         {
-            return null;
+            return EquatableArray<DiscoveryResult>.Empty;
         }
 
         // Quantix interfaces are matched by namespace, name and arity — the generator resolves
         // no well-known symbols, so this per-node transform stays cheap.
-        DiscoveredHandler? handler = HandlerClassifier.Classify(type);
-        if (handler is not null)
+        ImmutableArray<DiscoveredHandler> handlers = HandlerClassifier.Classify(type);
+        if (!handlers.IsEmpty)
         {
-            return new DiscoveryResult(handler, null, null);
+            ImmutableArray<DiscoveryResult>.Builder results =
+                ImmutableArray.CreateBuilder<DiscoveryResult>(handlers.Length);
+            foreach (DiscoveredHandler handler in handlers)
+            {
+                results.Add(new DiscoveryResult(handler, null, null));
+            }
+
+            return new EquatableArray<DiscoveryResult>(results.MoveToImmutable());
         }
 
         DiscoveredBehavior? behavior = BehaviorClassifier.Classify(type);
         if (behavior is not null)
         {
-            return new DiscoveryResult(null, behavior, null);
+            return Single(new DiscoveryResult(null, behavior, null));
         }
 
         DiscoveredMessage? message = MessageClassifier.Classify(type);
         if (message is not null)
         {
-            return new DiscoveryResult(null, null, message);
+            return Single(new DiscoveryResult(null, null, message));
         }
 
-        return null;
+        return EquatableArray<DiscoveryResult>.Empty;
     }
 
-    /// <summary>The cheap syntactic pre-filter: an object creation of a generic type.</summary>
+    /// <summary>Wraps one discovery result as a single-element equatable array.</summary>
+    private static EquatableArray<DiscoveryResult> Single(DiscoveryResult result)
+        => new(ImmutableArray.Create(result));
+
+    /// <summary>
+    /// The cheap syntactic pre-filter: an object creation of a generic type, or a target-typed
+    /// <c>new(...)</c> — whose type is known only semantically, so the transform checks it.
+    /// </summary>
     private static bool IsGenericConstruction(SyntaxNode node)
-        => node is ObjectCreationExpressionSyntax creation && IsGenericTypeName(creation.Type);
+        => node switch
+        {
+            ObjectCreationExpressionSyntax creation => IsGenericTypeName(creation.Type),
+            ImplicitObjectCreationExpressionSyntax => true,
+            _ => false,
+        };
 
     /// <summary>Determines whether a type syntax names a generic type, including a qualified one.</summary>
     private static bool IsGenericTypeName(TypeSyntax type)
@@ -120,9 +143,10 @@ public sealed class QuantixGenerator : IIncrementalGenerator
         GeneratorSyntaxContext context,
         CancellationToken cancellationToken)
     {
-        var creation = (ObjectCreationExpressionSyntax)context.Node;
+        var creation = (BaseObjectCreationExpressionSyntax)context.Node;
 
-        if (context.SemanticModel.GetTypeInfo(creation, cancellationToken).Type is not INamedTypeSymbol type)
+        if (context.SemanticModel.GetTypeInfo(creation, cancellationToken).Type
+                is not INamedTypeSymbol { IsGenericType: true } type)
         {
             return null;
         }

@@ -94,6 +94,26 @@ internal static class SymbolHelpers
     }
 
     /// <summary>
+    /// Determines whether a type carries <c>[QuantixIgnore]</c>, which excludes a handler or
+    /// behavior from discovery.
+    /// </summary>
+    /// <param name="type">The type whose attributes to inspect.</param>
+    /// <returns>True when the type is excluded from discovery.</returns>
+    public static bool IsIgnored(INamedTypeSymbol type)
+    {
+        foreach (AttributeData attribute in type.GetAttributes())
+        {
+            if (attribute.AttributeClass is { } attributeClass
+                && IsQuantixType(attributeClass, "QuantixIgnoreAttribute", 0))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Reads the single integer constructor argument of a Quantix attribute applied to a type,
     /// defaulting to 0 when the attribute is absent.
     /// </summary>

@@ -19,7 +19,7 @@ internal static class BehaviorClassifier
     /// <returns>A <see cref="DiscoveredBehavior"/>, or null when the type is not a behavior.</returns>
     public static DiscoveredBehavior? Classify(INamedTypeSymbol candidate)
     {
-        if (candidate.TypeKind != TypeKind.Class)
+        if (candidate.TypeKind != TypeKind.Class || SymbolHelpers.IsIgnored(candidate))
         {
             return null;
         }

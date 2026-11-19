@@ -56,6 +56,7 @@ internal static class MediatorEmitter
         EmitSendRequest(writer, model, MessageKind.Query, "global::Quantix.IQuery<TResult>", "query", frozen);
         EmitPublish(writer, model, frozen);
         EmitStream(writer, model, frozen);
+        EmitAsResult(writer);
         EmitExecuteMethods(writer, model);
 
         writer.CloseBrace();
@@ -132,7 +133,7 @@ internal static class MediatorEmitter
             kind,
             parameterName,
             frozen,
-            static (index, message) => $"({ValueTask}<TResult>)(object)Execute_{index}({message}, ct)",
+            (index, message) => $"AsResult<{model.Messages[index].ResultType}, TResult>(Execute_{index}({message}, ct))",
             $"throw new global::Quantix.QuantixException("
                 + $"\"No Quantix handler is registered for {parameterName} type '\" + {parameterName}.GetType() + \"'.\");");
         writer.CloseBrace();
@@ -188,6 +189,10 @@ internal static class MediatorEmitter
         System.Func<int, string, string> callExpression,
         string onMiss)
     {
+        // Without this guard a null message would fail with a NullReferenceException (or, for
+        // Publish, silently do nothing on the type-pattern path).
+        writer.Line($"global::System.ArgumentNullException.ThrowIfNull({parameterName});");
+
         if (frozen)
         {
             writer.Line($"switch (Discriminator({parameterName}))");
@@ -212,7 +217,9 @@ internal static class MediatorEmitter
         }
         else
         {
-            for (int i = 0; i < model.Messages.Count; i++)
+            // 'is' also matches subclasses, so a message deriving from another message must be
+            // tested first — otherwise the base message's branch would claim it.
+            foreach (int i in TypePatternOrder(model))
             {
                 if (model.Messages[i].Kind == kind)
                 {
@@ -226,6 +233,53 @@ internal static class MediatorEmitter
 
         writer.Line();
         writer.Line(onMiss);
+    }
+
+    /// <summary>
+    /// Orders message indices for the type-pattern chain: most-derived messages first, then by
+    /// model order (fully-qualified name), so the emitted chain is stable across builds.
+    /// </summary>
+    private static List<int> TypePatternOrder(QuantixModel model)
+    {
+        var order = new List<int>(model.Messages.Count);
+        for (int i = 0; i < model.Messages.Count; i++)
+        {
+            order.Add(i);
+        }
+
+        order.Sort((left, right) =>
+        {
+            int byDepth = model.Messages[right].BaseMessageCount.CompareTo(model.Messages[left].BaseMessageCount);
+            return byDepth != 0 ? byDepth : left.CompareTo(right);
+        });
+
+        return order;
+    }
+
+    /// <summary>
+    /// Emits the <c>AsResult</c> helper that converts an Execute method's
+    /// <c>ValueTask&lt;TConcrete&gt;</c> to the verb's <c>ValueTask&lt;TResult&gt;</c>. A cast
+    /// through <c>object</c> would box the struct — a heap allocation on every call whenever
+    /// <c>TResult</c> is a reference type, because the JIT shares that code across reference
+    /// types and cannot remove the box. The helper instead checks the two types are identical
+    /// and reinterprets the struct in place; the check folds away for value types.
+    /// </summary>
+    private static void EmitAsResult(CodeWriter writer)
+    {
+        writer.Line();
+        writer.Line("/// <summary>Converts a ValueTask of the message's declared result type to the verb's TResult without boxing.</summary>");
+        writer.Line($"private static {ValueTask}<TTo> AsResult<TFrom, TTo>({ValueTask}<TFrom> task)");
+        writer.OpenBrace();
+        writer.Line("// The guard is what makes the reinterpretation sound: it runs only when TFrom and");
+        writer.Line("// TTo are the same type, so the two ValueTask layouts are identical.");
+        writer.Line("if (typeof(TFrom) != typeof(TTo))");
+        writer.OpenBrace();
+        writer.Line("throw new global::System.InvalidCastException(");
+        writer.Line("    \"Quantix result type mismatch: the handler produces '\" + typeof(TFrom) + \"' but '\" + typeof(TTo) + \"' was requested.\");");
+        writer.CloseBrace();
+        writer.Line();
+        writer.Line($"return global::System.Runtime.CompilerServices.Unsafe.As<{ValueTask}<TFrom>, {ValueTask}<TTo>>(ref task);");
+        writer.CloseBrace();
     }
 
     /// <summary>Emits a private Execute method for every message in the model.</summary>

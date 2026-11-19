@@ -6,54 +6,70 @@ using Microsoft.CodeAnalysis;
 namespace Quantix.Generator;
 
 /// <summary>
-/// Inspects a type symbol and, when it implements a Quantix handler interface, describes it as
-/// a <see cref="DiscoveredHandler"/>.
+/// Inspects a type symbol and, for each Quantix handler interface it implements, describes it
+/// as a <see cref="DiscoveredHandler"/>.
 /// </summary>
 internal static class HandlerClassifier
 {
     /// <summary>
-    /// Classifies <paramref name="candidate"/> as a Quantix handler, or returns null when it
-    /// does not implement a handler interface. Abstract classes are still classified so the
-    /// validation stage can report diagnostic QTX0003.
+    /// Classifies <paramref name="candidate"/> as a Quantix handler. A class may implement
+    /// several handler interfaces (for example one notification handler for two notifications);
+    /// one <see cref="DiscoveredHandler"/> is returned per implemented interface. Returns an
+    /// empty array when the type is not a handler or carries <c>[QuantixIgnore]</c>. Abstract
+    /// classes are still classified so the validation stage can report diagnostic QTX0003.
     /// </summary>
     /// <param name="candidate">The type being inspected.</param>
-    /// <returns>A <see cref="DiscoveredHandler"/>, or null when the type is not a handler.</returns>
-    public static DiscoveredHandler? Classify(INamedTypeSymbol candidate)
+    /// <returns>The handlers the type provides, in interface declaration order.</returns>
+    public static ImmutableArray<DiscoveredHandler> Classify(INamedTypeSymbol candidate)
     {
         // Only classes (including record classes) can be handlers — the container constructs them.
-        if (candidate.TypeKind != TypeKind.Class)
+        if (candidate.TypeKind != TypeKind.Class || SymbolHelpers.IsIgnored(candidate))
         {
-            return null;
+            return ImmutableArray<DiscoveredHandler>.Empty;
         }
+
+        ImmutableArray<DiscoveredHandler>.Builder? handlers = null;
 
         foreach (INamedTypeSymbol iface in candidate.AllInterfaces)
         {
-            INamedTypeSymbol definition = iface.OriginalDefinition;
-
-            if (SymbolHelpers.IsQuantixType(definition, "ICommandHandler", 1))
+            if (Match(candidate, iface) is { } handler)
             {
-                return Describe(MessageKind.VoidCommand, candidate, iface, hasResult: false);
+                handlers ??= ImmutableArray.CreateBuilder<DiscoveredHandler>();
+                handlers.Add(handler);
             }
+        }
 
-            if (SymbolHelpers.IsQuantixType(definition, "ICommandHandler", 2))
-            {
-                return Describe(MessageKind.Command, candidate, iface, hasResult: true);
-            }
+        return handlers?.ToImmutable() ?? ImmutableArray<DiscoveredHandler>.Empty;
+    }
 
-            if (SymbolHelpers.IsQuantixType(definition, "IQueryHandler", 2))
-            {
-                return Describe(MessageKind.Query, candidate, iface, hasResult: true);
-            }
+    /// <summary>Describes one implemented interface as a handler, or returns null when it is not a handler interface.</summary>
+    private static DiscoveredHandler? Match(INamedTypeSymbol candidate, INamedTypeSymbol iface)
+    {
+        INamedTypeSymbol definition = iface.OriginalDefinition;
 
-            if (SymbolHelpers.IsQuantixType(definition, "INotificationHandler", 1))
-            {
-                return Describe(MessageKind.Notification, candidate, iface, hasResult: false);
-            }
+        if (SymbolHelpers.IsQuantixType(definition, "ICommandHandler", 1))
+        {
+            return Describe(MessageKind.VoidCommand, candidate, iface, hasResult: false);
+        }
 
-            if (SymbolHelpers.IsQuantixType(definition, "IStreamRequestHandler", 2))
-            {
-                return Describe(MessageKind.StreamRequest, candidate, iface, hasResult: true);
-            }
+        if (SymbolHelpers.IsQuantixType(definition, "ICommandHandler", 2))
+        {
+            return Describe(MessageKind.Command, candidate, iface, hasResult: true);
+        }
+
+        if (SymbolHelpers.IsQuantixType(definition, "IQueryHandler", 2))
+        {
+            return Describe(MessageKind.Query, candidate, iface, hasResult: true);
+        }
+
+        if (SymbolHelpers.IsQuantixType(definition, "INotificationHandler", 1))
+        {
+            return Describe(MessageKind.Notification, candidate, iface, hasResult: false);
+        }
+
+        if (SymbolHelpers.IsQuantixType(definition, "IStreamRequestHandler", 2))
+        {
+            return Describe(MessageKind.StreamRequest, candidate, iface, hasResult: true);
         }
 
         return null;

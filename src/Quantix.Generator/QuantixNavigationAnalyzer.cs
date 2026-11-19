@@ -33,10 +33,15 @@ public sealed class QuantixNavigationAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
         // The handler map is built once per compilation, then read concurrently per call site.
+        // It is built lazily — on the first IMediator call site — because building it walks
+        // every type in the compilation, a cost an IDE would otherwise pay on each compilation
+        // even where the mediator is never called.
         context.RegisterCompilationStartAction(static startContext =>
         {
-            Dictionary<string, List<DiscoveredHandler>> handlersByMessage =
-                BuildHandlerMap(startContext.Compilation);
+            Compilation compilation = startContext.Compilation;
+            var handlersByMessage = new Lazy<Dictionary<string, List<DiscoveredHandler>>>(
+                () => BuildHandlerMap(compilation),
+                LazyThreadSafetyMode.ExecutionAndPublication);
 
             startContext.RegisterSyntaxNodeAction(
                 nodeContext => AnalyzeInvocation(nodeContext, handlersByMessage),
@@ -55,22 +60,20 @@ public sealed class QuantixNavigationAnalyzer : DiagnosticAnalyzer
 
         foreach (INamedTypeSymbol type in EnumerateTypes(compilation.Assembly.GlobalNamespace))
         {
-            if (HandlerClassifier.Classify(type) is not { } handler)
+            foreach (DiscoveredHandler handler in HandlerClassifier.Classify(type))
             {
-                continue;
+                string key = handler is { IsOpenGeneric: true, OpenMessageGenericName: { } openMessage }
+                    ? openMessage
+                    : handler.MessageType;
+
+                if (!map.TryGetValue(key, out List<DiscoveredHandler>? handlers))
+                {
+                    handlers = new List<DiscoveredHandler>();
+                    map.Add(key, handlers);
+                }
+
+                handlers.Add(handler);
             }
-
-            string key = handler is { IsOpenGeneric: true, OpenMessageGenericName: { } openMessage }
-                ? openMessage
-                : handler.MessageType;
-
-            if (!map.TryGetValue(key, out List<DiscoveredHandler>? handlers))
-            {
-                handlers = new List<DiscoveredHandler>();
-                map.Add(key, handlers);
-            }
-
-            handlers.Add(handler);
         }
 
         foreach (List<DiscoveredHandler> handlers in map.Values)
@@ -110,7 +113,7 @@ public sealed class QuantixNavigationAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private static void AnalyzeInvocation(
         SyntaxNodeAnalysisContext context,
-        Dictionary<string, List<DiscoveredHandler>> handlersByMessage)
+        Lazy<Dictionary<string, List<DiscoveredHandler>>> handlersByMessage)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
@@ -139,7 +142,7 @@ public sealed class QuantixNavigationAnalyzer : DiagnosticAnalyzer
             ? SymbolHelpers.ToUnboundGenericName(messageType)
             : SymbolHelpers.ToFullyQualifiedName(messageType);
 
-        if (!handlersByMessage.TryGetValue(lookupKey, out List<DiscoveredHandler>? handlers)
+        if (!handlersByMessage.Value.TryGetValue(lookupKey, out List<DiscoveredHandler>? handlers)
             || handlers.Count == 0)
         {
             return;

@@ -9,7 +9,29 @@ tagging a commit `v1.0.0` produces package version `1.0.0`.
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+
+- A handler class implementing several handler interfaces (for example
+  `INotificationHandler<A>, INotificationHandler<B>`) was discovered for the
+  first interface only; the others were silently dropped. Every implemented
+  handler interface is now discovered.
+- A message deriving from another message could be routed to the base
+  message's handler by the type-pattern chain (used for up to 32 messages).
+  Derived messages are now tested before their bases.
+- A generic message created with a target-typed `new(...)` was not discovered,
+  so its open-generic handler was never closed and `Send` failed at run time.
+- `[QuantixIgnore]` was documented but had no effect; it now excludes the
+  handler or behavior from discovery.
+- Passing a `null` message to `Send`, `Publish` or `Stream` now throws
+  `ArgumentNullException` instead of `NullReferenceException` — or, for
+  `Publish`, silently doing nothing.
+
+### Performance
+
+- `Send` for a command or query with a reference-type result no longer
+  allocates (previously 40 bytes per call from boxing the `ValueTask<TResult>`).
+- The navigation analyzer builds its handler map only on the first mediator
+  call site in a compilation, instead of at every compilation start.
 
 ## [1.0.1] - 2026-05-26
 

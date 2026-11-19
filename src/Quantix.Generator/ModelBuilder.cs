@@ -77,7 +77,8 @@ internal static class ModelBuilder
                     message,
                     closedBehaviors,
                     openGenericBehaviors,
-                    diagnostics)));
+                    diagnostics),
+                CountBaseMessages(messageType, message, handlersByMessage)));
         }
 
         ValidateMessages(results, handlersByMessage, diagnostics);
@@ -91,6 +92,35 @@ internal static class ModelBuilder
         return new QuantixModel(
             new EquatableArray<MessageModel>(messages.ToImmutable()),
             new EquatableArray<DiagnosticInfo>(diagnostics.ToImmutable()));
+    }
+
+    /// <summary>
+    /// Counts the other dispatchable messages that <paramref name="messageType"/> derives from.
+    /// <see cref="DiscoveredMessage.SatisfiedTypes"/> lists the message's base types, so every
+    /// entry that is itself a dispatchable message is a base message.
+    /// </summary>
+    private static int CountBaseMessages(
+        string messageType,
+        DiscoveredMessage? message,
+        Dictionary<string, List<DiscoveredHandler>> handlersByMessage)
+    {
+        if (message is null)
+        {
+            return 0;
+        }
+
+        int count = 0;
+        for (int i = 0; i < message.SatisfiedTypes.Count; i++)
+        {
+            string satisfied = message.SatisfiedTypes[i];
+            if (!string.Equals(satisfied, messageType, StringComparison.Ordinal)
+                && handlersByMessage.ContainsKey(satisfied))
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     /// <summary>Collects the simple-shape open-generic handlers discovered in the compilation.</summary>

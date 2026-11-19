@@ -19,12 +19,18 @@ namespace Quantix.Generator;
 /// <param name="Behaviors">
 /// The fully-qualified behavior type names that wrap this message, ordered outermost first.
 /// </param>
+/// <param name="BaseMessageCount">
+/// How many other messages in the model this message's type derives from. The type-pattern
+/// dispatch chain tests messages with a higher count first, so a derived message is matched
+/// before its base message would claim it.
+/// </param>
 internal sealed record MessageModel(
     MessageKind Kind,
     string MessageType,
     string? ResultType,
     EquatableArray<string> Handlers,
-    EquatableArray<string> Behaviors);
+    EquatableArray<string> Behaviors,
+    int BaseMessageCount);
 
 /// <summary>
 /// The complete Quantix model for one compilation: every message the generator will emit a
