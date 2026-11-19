@@ -38,6 +38,25 @@ public class DispatchTests
     }
 
     [Fact]
+    public async Task One_behavior_class_wraps_both_a_query_and_a_stream()
+    {
+        var log = new List<string>();
+        ServiceProvider provider = new ServiceCollection()
+            .AddSingleton(log)
+            .AddQuantix()
+            .BuildServiceProvider();
+
+        IMediator mediator = provider.GetRequiredService<IMediator>();
+
+        await mediator.Send(new StockLevel());
+        await foreach (int _ in mediator.Stream(new StockFeed()))
+        {
+        }
+
+        Assert.Equal(new[] { "query", "stream" }, log);
+    }
+
+    [Fact]
     public async Task Verbs_reject_a_null_message()
     {
         ServiceProvider provider = new ServiceCollection()
@@ -120,5 +139,50 @@ public sealed class AccountAuditHandler(List<string> log)
     {
         log.Add("closed");
         return default;
+    }
+}
+
+/// <summary>A query wrapped by <see cref="StockAuditBehavior"/>.</summary>
+public sealed record StockLevel : IQuery<int>;
+
+/// <summary>A stream request wrapped by <see cref="StockAuditBehavior"/>.</summary>
+public sealed record StockFeed : IStreamRequest<int>;
+
+/// <summary>Handles <see cref="StockLevel"/>.</summary>
+public sealed class StockLevelHandler : IQueryHandler<StockLevel, int>
+{
+    /// <inheritdoc />
+    public ValueTask<int> Handle(StockLevel query, CancellationToken ct) => new(7);
+}
+
+/// <summary>Handles <see cref="StockFeed"/>.</summary>
+public sealed class StockFeedHandler : IStreamRequestHandler<StockFeed, int>
+{
+    /// <inheritdoc />
+    public async IAsyncEnumerable<int> Handle(
+        StockFeed request,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct)
+    {
+        await Task.Yield();
+        yield return 1;
+    }
+}
+
+/// <summary>One behavior class implementing both the request and the stream behavior interfaces.</summary>
+public sealed class StockAuditBehavior(List<string> log)
+    : IPipelineBehavior<StockLevel, int>, IStreamPipelineBehavior<StockFeed, int>
+{
+    /// <inheritdoc />
+    public ValueTask<int> Handle(StockLevel request, RequestHandlerDelegate<int> next, CancellationToken ct)
+    {
+        log.Add("query");
+        return next(ct);
+    }
+
+    /// <inheritdoc />
+    public IAsyncEnumerable<int> Handle(StockFeed request, StreamHandlerDelegate<int> next, CancellationToken ct)
+    {
+        log.Add("stream");
+        return next(ct);
     }
 }

@@ -66,7 +66,7 @@ public sealed class QuantixGenerator : IIncrementalGenerator
 
     /// <summary>
     /// The semantic transform: resolves the candidate's symbol and classifies it as Quantix
-    /// handlers (one per implemented handler interface), a pipeline behavior or a message.
+    /// handlers and pipeline behaviors (one per implemented interface), or as a message.
     /// Returns an empty array when the type is none of those.
     /// </summary>
     private static EquatableArray<DiscoveryResult> Transform(GeneratorSyntaxContext context, CancellationToken cancellationToken)
@@ -79,24 +79,26 @@ public sealed class QuantixGenerator : IIncrementalGenerator
         }
 
         // Quantix interfaces are matched by namespace, name and arity — the generator resolves
-        // no well-known symbols, so this per-node transform stays cheap.
+        // no well-known symbols, so this per-node transform stays cheap. A class can be several
+        // handlers and several behaviors at once: one result per implemented interface, so none
+        // of its roles is silently dropped.
         ImmutableArray<DiscoveredHandler> handlers = HandlerClassifier.Classify(type);
-        if (!handlers.IsEmpty)
+        ImmutableArray<DiscoveredBehavior> behaviors = BehaviorClassifier.Classify(type);
+        if (!handlers.IsEmpty || !behaviors.IsEmpty)
         {
             ImmutableArray<DiscoveryResult>.Builder results =
-                ImmutableArray.CreateBuilder<DiscoveryResult>(handlers.Length);
+                ImmutableArray.CreateBuilder<DiscoveryResult>(handlers.Length + behaviors.Length);
             foreach (DiscoveredHandler handler in handlers)
             {
                 results.Add(new DiscoveryResult(handler, null, null));
             }
 
-            return new EquatableArray<DiscoveryResult>(results.MoveToImmutable());
-        }
+            foreach (DiscoveredBehavior behavior in behaviors)
+            {
+                results.Add(new DiscoveryResult(null, behavior, null));
+            }
 
-        DiscoveredBehavior? behavior = BehaviorClassifier.Classify(type);
-        if (behavior is not null)
-        {
-            return Single(new DiscoveryResult(null, behavior, null));
+            return new EquatableArray<DiscoveryResult>(results.MoveToImmutable());
         }
 
         DiscoveredMessage? message = MessageClassifier.Classify(type);

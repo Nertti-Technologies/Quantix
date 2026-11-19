@@ -34,6 +34,71 @@ public class DiscoveryTests
     }
 
     [Fact]
+    public void Discovers_every_behavior_interface_a_class_implements()
+    {
+        const string source = """
+            using Quantix;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace App;
+
+            public sealed record Lookup : IQuery<int>;
+            public sealed record Feed : IStreamRequest<int>;
+
+            public sealed class LookupHandler : IQueryHandler<Lookup, int>
+            {
+                public ValueTask<int> Handle(Lookup query, CancellationToken ct) => new(1);
+            }
+
+            public sealed class FeedHandler : IStreamRequestHandler<Feed, int>
+            {
+                public IAsyncEnumerable<int> Handle(Feed request, CancellationToken ct) => throw null!;
+            }
+
+            public sealed class AuditBehavior : IPipelineBehavior<Lookup, int>, IStreamPipelineBehavior<Feed, int>
+            {
+                public ValueTask<int> Handle(Lookup request, RequestHandlerDelegate<int> next, CancellationToken ct) => next(ct);
+                public IAsyncEnumerable<int> Handle(Feed request, StreamHandlerDelegate<int> next, CancellationToken ct) => next(ct);
+            }
+            """;
+
+        GeneratorResult result = GeneratorTestHarness.Run(source);
+        string mediator = result.GetGeneratedFile("QuantixMediator.g.cs");
+
+        Assert.Empty(result.Diagnostics);
+        Assert.Contains("global::Quantix.IPipelineBehavior<global::App.Lookup, int> behavior0", mediator);
+        Assert.Contains("global::Quantix.IStreamPipelineBehavior<global::App.Feed, int> behavior0", mediator);
+    }
+
+    [Fact]
+    public void Keeps_the_behavior_role_of_a_class_that_is_also_a_handler()
+    {
+        const string source = """
+            using Quantix;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace App;
+
+            public sealed record Ping : ICommand;
+
+            public sealed class PingHandlerAndBehavior : ICommandHandler<Ping>, ICommandPipelineBehavior<Ping>
+            {
+                public ValueTask Handle(Ping command, CancellationToken ct) => default;
+                public ValueTask Handle(Ping command, CommandHandlerDelegate next, CancellationToken ct) => next(ct);
+            }
+            """;
+
+        GeneratorResult result = GeneratorTestHarness.Run(source);
+        string mediator = result.GetGeneratedFile("QuantixMediator.g.cs");
+
+        Assert.Empty(result.Diagnostics);
+        Assert.Contains("global::Quantix.ICommandPipelineBehavior<global::App.Ping> behavior0", mediator);
+    }
+
+    [Fact]
     public void Excludes_a_handler_marked_QuantixIgnore()
     {
         const string source = """

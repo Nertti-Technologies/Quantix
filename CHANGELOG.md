@@ -25,6 +25,10 @@ tagging a commit `v1.0.0` produces package version `1.0.0`.
 - Passing a `null` message to `Send`, `Publish` or `Stream` now throws
   `ArgumentNullException` instead of `NullReferenceException` — or, for
   `Publish`, silently doing nothing.
+- A behavior class implementing several behavior interfaces (for example
+  request and stream) wrapped only the first; and a class that was both a
+  handler and a behavior lost its behavior role. Every implemented behavior
+  interface is now discovered.
 
 ### Performance
 

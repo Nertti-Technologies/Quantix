@@ -6,42 +6,58 @@ using Microsoft.CodeAnalysis;
 namespace Quantix.Generator;
 
 /// <summary>
-/// Inspects a type symbol and, when it implements a Quantix pipeline behavior interface,
+/// Inspects a type symbol and, for each Quantix pipeline behavior interface it implements,
 /// describes it as a <see cref="DiscoveredBehavior"/>.
 /// </summary>
 internal static class BehaviorClassifier
 {
     /// <summary>
-    /// Classifies <paramref name="candidate"/> as a Quantix pipeline behavior, or returns null
-    /// when it does not implement a behavior interface.
+    /// Classifies <paramref name="candidate"/> as Quantix pipeline behaviors. A class may
+    /// implement several behavior interfaces (for example one logging behavior for requests and
+    /// streams); one <see cref="DiscoveredBehavior"/> is returned per implemented interface.
+    /// Returns an empty array when the type is not a behavior or carries <c>[QuantixIgnore]</c>.
     /// </summary>
     /// <param name="candidate">The type being inspected.</param>
-    /// <returns>A <see cref="DiscoveredBehavior"/>, or null when the type is not a behavior.</returns>
-    public static DiscoveredBehavior? Classify(INamedTypeSymbol candidate)
+    /// <returns>The behaviors the type provides, in interface declaration order.</returns>
+    public static ImmutableArray<DiscoveredBehavior> Classify(INamedTypeSymbol candidate)
     {
         if (candidate.TypeKind != TypeKind.Class || SymbolHelpers.IsIgnored(candidate))
         {
-            return null;
+            return ImmutableArray<DiscoveredBehavior>.Empty;
         }
+
+        ImmutableArray<DiscoveredBehavior>.Builder? behaviors = null;
 
         foreach (INamedTypeSymbol iface in candidate.AllInterfaces)
         {
-            INamedTypeSymbol definition = iface.OriginalDefinition;
-
-            if (SymbolHelpers.IsQuantixType(definition, "IPipelineBehavior", 2))
+            if (Match(candidate, iface) is { } behavior)
             {
-                return Describe(BehaviorKind.Request, candidate, iface, hasResult: true);
+                behaviors ??= ImmutableArray.CreateBuilder<DiscoveredBehavior>();
+                behaviors.Add(behavior);
             }
+        }
 
-            if (SymbolHelpers.IsQuantixType(definition, "ICommandPipelineBehavior", 1))
-            {
-                return Describe(BehaviorKind.Command, candidate, iface, hasResult: false);
-            }
+        return behaviors?.ToImmutable() ?? ImmutableArray<DiscoveredBehavior>.Empty;
+    }
 
-            if (SymbolHelpers.IsQuantixType(definition, "IStreamPipelineBehavior", 2))
-            {
-                return Describe(BehaviorKind.Stream, candidate, iface, hasResult: true);
-            }
+    /// <summary>Describes one implemented interface as a behavior, or returns null when it is not a behavior interface.</summary>
+    private static DiscoveredBehavior? Match(INamedTypeSymbol candidate, INamedTypeSymbol iface)
+    {
+        INamedTypeSymbol definition = iface.OriginalDefinition;
+
+        if (SymbolHelpers.IsQuantixType(definition, "IPipelineBehavior", 2))
+        {
+            return Describe(BehaviorKind.Request, candidate, iface, hasResult: true);
+        }
+
+        if (SymbolHelpers.IsQuantixType(definition, "ICommandPipelineBehavior", 1))
+        {
+            return Describe(BehaviorKind.Command, candidate, iface, hasResult: false);
+        }
+
+        if (SymbolHelpers.IsQuantixType(definition, "IStreamPipelineBehavior", 2))
+        {
+            return Describe(BehaviorKind.Stream, candidate, iface, hasResult: true);
         }
 
         return null;
