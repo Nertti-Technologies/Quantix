@@ -45,6 +45,10 @@ tagging a commit `v1.0.0` produces package version `1.0.0`.
   rolling forward to later feature bands).
 - Build tooling updated: PolySharp 1.17.0, Microsoft.NET.Test.Sdk 18.12.0,
   xunit 2.9.3, BenchmarkDotNet 0.15.8, MinVer 8.0.0.
+- CI workflows run with read-only token permissions and pin every action to a
+  commit SHA; the release workflow passes the tag name and NuGet key through
+  environment variables. Dependabot is configured for NuGet and GitHub Actions,
+  excluding the deliberate version floors.
 
 ## [1.0.1] - 2026-05-26
 

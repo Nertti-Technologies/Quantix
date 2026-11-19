@@ -19,32 +19,36 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege: CI only reads the repository; artifacts upload with the run's own token.
+permissions:
+  contents: read
+
 jobs:
   build-test:
     name: Build, test & pack
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # MinVer derives the package version from git history and tags, so the
           # full history must be fetched — a shallow clone yields a wrong version.
           fetch-depth: 0
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           global-json-file: global.json
 
-      - name: Restore
-        run: dotnet restore Quantix.slnx
-
-      - name: Build
       - name: Third-party notices are current
         # Fails when a pinned package is unclassified, a bundled package's version drifts from
         # its notice, or THIRD-PARTY-NOTICES.txt was not regenerated (eng/notices.py).
         run: python3 eng/notices.py --check
 
+      - name: Restore
+        run: dotnet restore Quantix.slnx
+
+      - name: Build
         run: dotnet build Quantix.slnx --configuration Release --no-restore
 
       - name: Test
@@ -56,7 +60,7 @@ jobs:
         run: dotnet pack src/Quantix/Quantix.csproj --configuration Release --no-restore --output artifacts/ci-package
 
       - name: Upload package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: quantix-package
           path: |
@@ -69,12 +73,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           global-json-file: global.json
 
@@ -99,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 

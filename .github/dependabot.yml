@@ -1,11 +1,27 @@
---# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+# Dependabot version updates for the NuGet packages (central versions in
+# Directory.Packages.props) and the GitHub Actions used by the workflows.
+#
+# Some versions are deliberate floors, not stale pins, and must not be raised by a bot:
+#   * Microsoft.CodeAnalysis.CSharp — the generator's compiled Roslyn API floor (4.8.0);
+#     raising it risks the generator not loading in older SDKs and IDEs.
+#   * Microsoft.Extensions.DependencyInjection.Abstractions — the package's one runtime
+#     dependency; its version is the minimum every consumer is forced up to.
+#   * The benchmark baseline package — releases after 12.x changed licence terms.
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp"
+      - dependency-name: "Microsoft.CodeAnalysis.Analyzers"
+      - dependency-name: "Microsoft.Extensions.DependencyInjection.Abstractions"
+      - dependency-name: "Microsoft.Extensions.DependencyInjection"
+      - dependency-name: "MediatR"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
       interval: "weekly"
