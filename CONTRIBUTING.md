@@ -54,7 +54,7 @@ target a specific platform.
 | `src/Quantix` | The packaging project — bundles the two above into one NuGet package. |
 | `tests/Quantix.Generator.Tests` | Drives the generator and asserts on emitted code and diagnostics. |
 | `tests/Quantix.IntegrationTests` | Runs real messages through a real dependency-injection container. |
-| `benchmarks/` | The BenchmarkDotNet suite, measured against MediatR. |
+| `benchmarks/` | The BenchmarkDotNet suite, measured against a reference baseline. |
 | `samples/` | A Minimal API reference application. |
 
 ## Coding standards

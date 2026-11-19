@@ -2,7 +2,7 @@
 
   <!--
     Quantix.Benchmarks — the BenchmarkDotNet suite (Layer 5 of docs/IMPLEMENTATION_PLAN.md).
-    Measures Quantix dispatch against a MediatR baseline. Run in Release; see the README for
+    Measures Quantix dispatch against a reference baseline. Run in Release; see the README for
     the exact command line.
   -->
 

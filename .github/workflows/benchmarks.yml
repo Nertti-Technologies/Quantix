@@ -1,6 +1,6 @@
 name: Benchmarks
 
-# The BenchmarkDotNet suite (Quantix vs MediatR). Kept off the pull-request path
+# The BenchmarkDotNet suite (Quantix vs a reference baseline). Kept off the pull-request path
 # on purpose: micro-benchmark numbers vary with the runner, and a noisy
 # measurement must never be able to block a merge. Run it on demand, and weekly
 # so a performance regression still surfaces on its own.

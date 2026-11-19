@@ -1,19 +1,19 @@
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.DependencyInjection;
-using MediatrMediator = MediatR.IMediator;
+using BaselineMediator = MediatR.IMediator;
 using QuantixMediator = Quantix.IMediator;
 
 namespace Quantix.Benchmarks;
 
 /// <summary>
-/// Send throughput and allocations — Quantix versus the MediatR baseline (plan L5-2, L5-5).
+/// Send throughput and allocations — Quantix versus the reference baseline (plan L5-2, L5-5).
 /// Both mediators dispatch a behavior-free command and query, so this isolates raw dispatch.
 /// </summary>
 [MemoryDiagnoser]
 public class SendBenchmarks
 {
     private QuantixMediator _quantix = null!;
-    private MediatrMediator _mediatr = null!;
+    private BaselineMediator _baseline = null!;
 
     /// <summary>Builds both dependency-injection containers once before the benchmarks run.</summary>
     [GlobalSetup]
@@ -24,23 +24,23 @@ public class SendBenchmarks
             .BuildServiceProvider()
             .GetRequiredService<QuantixMediator>();
 
-        _mediatr = new ServiceCollection()
-            .AddMediatR(configuration => configuration.RegisterServicesFromAssembly(typeof(MediatrCommand).Assembly))
+        _baseline = new ServiceCollection()
+            .AddMediatR(configuration => configuration.RegisterServicesFromAssembly(typeof(BaselineCommand).Assembly))
             .BuildServiceProvider()
-            .GetRequiredService<MediatrMediator>();
+            .GetRequiredService<BaselineMediator>();
     }
 
-    /// <summary>The MediatR baseline: send a command.</summary>
+    /// <summary>The reference baseline: send a command.</summary>
     [Benchmark(Baseline = true)]
-    public Task<int> MediatR_SendCommand() => _mediatr.Send(new MediatrCommand(1));
+    public Task<int> Baseline_SendCommand() => _baseline.Send(new BaselineCommand(1));
 
     /// <summary>Quantix: send a command.</summary>
     [Benchmark]
     public ValueTask<int> Quantix_SendCommand() => _quantix.Send(new BenchCommand(1));
 
-    /// <summary>The MediatR baseline: send a query.</summary>
+    /// <summary>The reference baseline: send a query.</summary>
     [Benchmark]
-    public Task<int> MediatR_SendQuery() => _mediatr.Send(new MediatrQuery(1));
+    public Task<int> Baseline_SendQuery() => _baseline.Send(new BaselineQuery(1));
 
     /// <summary>Quantix: send a query.</summary>
     [Benchmark]
