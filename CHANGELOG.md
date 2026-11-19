@@ -37,6 +37,10 @@ tagging a commit `v1.0.0` produces package version `1.0.0`.
 
 - **Breaking:** the `net8.0` target. The package now targets `net10.0` only;
   consumers need the .NET 10 SDK (10.0.100) or later.
+- **Breaking:** the `[QuantixHandler]`, `[QuantixModule]` and
+  `[ScanQuantixHandlersFrom]` attributes. They were never read by the generator,
+  so they had no effect; delete any usages. Discovery covers the compilation
+  that calls `AddQuantix()` only.
 
 ### Changed
 

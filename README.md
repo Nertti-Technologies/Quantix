@@ -92,6 +92,9 @@ sees closed types, which is what keeps Quantix AOT-clean.
 ## Requirements
 
 - A consuming project on `net10.0`.
+- Messages, handlers and behaviors declared in the project that calls `AddQuantix()`. The
+  generator discovers types in the compilation it runs in; it does not scan referenced
+  assemblies.
 - A C#-capable build (the generator targets `netstandard2.0`, so it loads in every modern SDK
   and IDE).
 

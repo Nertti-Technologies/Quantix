@@ -93,6 +93,17 @@ public class DiscoveryTests
         Assert.DoesNotContain("TraceBehavior", result.AllGeneratedSource);
     }
 
+    [Theory]
+    [InlineData("Quantix.QuantixHandlerAttribute")]
+    [InlineData("Quantix.QuantixModuleAttribute")]
+    [InlineData("Quantix.ScanQuantixHandlersFromAttribute")]
+    public void Abstractions_do_not_expose_attributes_the_generator_does_not_honour(string typeName)
+    {
+        // These attributes were removed (ADR 0001): the generator never read them, so offering
+        // them promised behaviour that did not exist.
+        Assert.Null(typeof(QuantixIgnoreAttribute).Assembly.GetType(typeName));
+    }
+
     [Fact]
     public void Discovers_a_generic_message_created_with_target_typed_new()
     {
