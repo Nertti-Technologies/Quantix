@@ -9,6 +9,8 @@ tagging a commit `v1.0.0` produces package version `1.0.0`.
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-11-20
+
 ### Fixed
 
 - A handler class implementing several handler interfaces (for example
@@ -116,6 +118,7 @@ is no startup scan, no per-call reflection, and no trim or AOT warnings.
 - A single NuGet package, `Quantix`, bundling the abstractions and the generator.
 - Native AOT and trimming support, with zero trim or AOT warnings.
 
-[Unreleased]: https://github.com/Nertti-Technologies/Quantix/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/Nertti-Technologies/Quantix/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/Nertti-Technologies/Quantix/compare/v1.0.1...v2.0.0
 [1.0.1]: https://github.com/Nertti-Technologies/Quantix/releases/tag/v1.0.1
 [1.0.0]: https://github.com/Nertti-Technologies/Quantix/releases/tag/v1.0.0
