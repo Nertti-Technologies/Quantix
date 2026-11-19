@@ -4,8 +4,11 @@ name: Release
 # into the package version, the package is published to NuGet, and a GitHub
 # release is created. Cutting and pushing the tag is a manual maintainer action.
 #
-# Requires one repository secret: NUGET_API_KEY (a nuget.org API key scoped to
-# the Quantix package).
+# Publishing uses nuget.org Trusted Publishing: no API key is stored. The job's GitHub
+# OIDC token is exchanged for a one-hour NuGet key just before the push. This needs:
+#   - a Trusted Publishing policy on nuget.org naming this repository and the workflow
+#     file `release.yml` (renaming this file breaks publishing until the policy is updated);
+#   - one repository secret, NUGET_USER: the nuget.org profile name (not the email).
 
 on:
   push:
@@ -13,6 +16,7 @@ on:
 
 permissions:
   contents: write  # required to create the GitHub release
+  id-token: write  # required to request the OIDC token that NuGet/login exchanges
 
 jobs:
   release:
@@ -45,13 +49,19 @@ jobs:
       - name: Pack
         run: dotnet pack src/Quantix/Quantix.csproj --configuration Release --no-restore --output artifacts/release-package
 
+      - name: NuGet login (OIDC to temporary API key)
+        id: nuget-login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Push to NuGet
         # The matching .snupkg symbol package in the same folder is pushed
         # automatically alongside the .nupkg.
         # The key reaches the shell as an environment variable, never interpolated into the
         # script text, so it cannot be echoed by a command-line trace.
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         run: >
           dotnet nuget push "artifacts/release-package/*.nupkg"
           --api-key "$NUGET_API_KEY"

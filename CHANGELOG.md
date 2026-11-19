@@ -70,9 +70,10 @@ tagging a commit `v1.0.0` produces package version `1.0.0`.
 - Build tooling updated: PolySharp 1.17.0, Microsoft.NET.Test.Sdk 18.12.0,
   xunit 2.9.3, BenchmarkDotNet 0.15.8, MinVer 8.0.0.
 - CI workflows run with read-only token permissions and pin every action to a
-  commit SHA; the release workflow passes the tag name and NuGet key through
-  environment variables. Dependabot is configured for NuGet and GitHub Actions,
-  excluding the deliberate version floors.
+  commit SHA; the release workflow passes the tag name through an environment
+  variable and publishes to NuGet with Trusted Publishing (a short-lived key
+  issued per release) instead of a stored API key. Dependabot is configured
+  for NuGet and GitHub Actions, excluding the deliberate version floors.
 - The CI floor check now builds a `net10.0` consumer with the oldest supported
   SDK (10.0.100).
 
