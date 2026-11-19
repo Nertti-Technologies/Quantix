@@ -30,7 +30,7 @@ rather than a runtime exception.
 dotnet add package Quantix
 ```
 
-Targets `net8.0` and `net10.0`.
+Targets `net10.0`.
 
 ## Quickstart
 
@@ -91,7 +91,7 @@ sees closed types, which is what keeps Quantix AOT-clean.
 
 ## Requirements
 
-- A consuming project on `net8.0` or `net10.0`.
+- A consuming project on `net10.0`.
 - A C#-capable build (the generator targets `netstandard2.0`, so it loads in every modern SDK
   and IDE).
 

@@ -33,6 +33,11 @@ tagging a commit `v1.0.0` produces package version `1.0.0`.
 - The navigation analyzer builds its handler map only on the first mediator
   call site in a compilation, instead of at every compilation start.
 
+### Removed
+
+- **Breaking:** the `net8.0` target. The package now targets `net10.0` only;
+  consumers need the .NET 10 SDK (10.0.100) or later.
+
 ### Changed
 
 - **Licence:** Quantix is licensed under Apache-2.0. The package metadata
@@ -49,6 +54,8 @@ tagging a commit `v1.0.0` produces package version `1.0.0`.
   commit SHA; the release workflow passes the tag name and NuGet key through
   environment variables. Dependabot is configured for NuGet and GitHub Actions,
   excluding the deliberate version floors.
+- The CI floor check now builds a `net10.0` consumer with the oldest supported
+  SDK (10.0.100).
 
 ## [1.0.1] - 2026-05-26
 

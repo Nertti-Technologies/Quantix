@@ -2,8 +2,8 @@ name: CI
 
 # Build, test and pack on every push and pull request to main, plus the two
 # guard legs that protect Quantix's core promises: a Native-AOT publish of the
-# sample (the reflection-free guarantee) and a build under the .NET 8 SDK's
-# Roslyn 4.8 (the generator's compiled API floor).
+# sample (the reflection-free guarantee) and a consumer build under the oldest
+# SDK that can build net10.0 (10.0.100), proving the generator loads there.
 #
 # The benchmark regression run is deliberately NOT here — it lives in
 # benchmarks.yml so a noisy measurement can never block a pull request.
@@ -99,7 +99,7 @@ jobs:
         run: test -x artifacts/aot-sample/Quantix.Sample.MinimalApi
 
   roslyn-floor:
-    name: Roslyn 4.8 floor (.NET 8 SDK)
+    name: Oldest supported SDK (10.0.100)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -107,16 +107,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up .NET (10.0 to pack, 8.0 to consume)
-        uses: actions/setup-dotnet@v4
+      - name: Set up .NET (11.0 to pack, 10.0.100 to consume)
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
-          # The .NET 8 SDK ships Roslyn 4.8 — the version the generator is compiled
-          # against. global.json installs the 10.0 SDK used to pack.
-          dotnet-version: '8.0.100'
+          # 10.0.100 is the first SDK that can build the net10.0 package, so it hosts
+          # the oldest Roslyn the generator must load in. global.json installs the
+          # 11.0 SDK used to pack.
+          dotnet-version: '10.0.100'
           global-json-file: global.json
 
-      - name: Pack Quantix with the 10.0 SDK
+      - name: Pack Quantix with the 11.0 SDK
         run: dotnet pack src/Quantix/Quantix.csproj --configuration Release --output artifacts/floor-feed
 
-      - name: Build a net8.0 consumer with the .NET 8 SDK
+      - name: Build a net10.0 consumer with the 10.0.100 SDK
         run: bash .github/scripts/roslyn-floor-check.sh

@@ -8,8 +8,6 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- net10.0 only: the .NET 8 runtime is not installed on the dev machine, and a benchmark
-         exists to be run. Matches the same decision made for Quantix.IntegrationTests. -->
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
 

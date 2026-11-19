@@ -64,8 +64,8 @@ target a specific platform.
 - Code style is enforced by [`.editorconfig`](.editorconfig); most IDEs apply it
   automatically.
 - The generator targets `netstandard2.0` and is compiled against Roslyn 4.8.0. Do
-  not call Roslyn APIs newer than 4.8.0 — they will not load in older IDEs and
-  SDKs, and CI's Roslyn-floor leg will fail.
+  not call Roslyn APIs newer than 4.8.0 — they may not load in older IDEs and
+  SDKs, and CI's oldest-supported-SDK leg will fail.
 - Keep public API changes to `Quantix.Abstractions` deliberate, and record them in
   `CHANGELOG.md`.
 

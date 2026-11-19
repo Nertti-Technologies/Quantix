@@ -28,11 +28,10 @@ public class PackageLayoutTests
             StringComparer.Ordinal);
 
         Assert.Contains("analyzers/dotnet/cs/Quantix.Generator.dll", entries);
-        Assert.Contains("lib/net8.0/Quantix.Abstractions.dll", entries);
         Assert.Contains("lib/net10.0/Quantix.Abstractions.dll", entries);
+        Assert.Contains("README.md", entries);
         Assert.Contains("LICENSE", entries);
         Assert.Contains("THIRD-PARTY-NOTICES.txt", entries);
-        Assert.Contains("README.md", entries);
     }
 
     /// <summary>Walks up from the test assembly to the directory holding <c>Quantix.slnx</c>.</summary>

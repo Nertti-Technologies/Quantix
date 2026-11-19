@@ -7,7 +7,7 @@
   -->
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Quantix</RootNamespace>
     <Description>Quantix abstractions — message, handler and behavior interfaces, IMediator, and attributes.</Description>
     <IsAotCompatible>true</IsAotCompatible>
