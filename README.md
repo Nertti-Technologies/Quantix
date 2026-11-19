@@ -70,8 +70,11 @@ no assembly lists, no open-generic registration ceremony.
   `INotification`, `IStreamRequest<T>`, dispatched by `Send`, `Publish` and `Stream`.
 - **Pipeline behaviors** — closed or open-generic. An open-generic behavior is scoped by its
   own generic constraints: `where TRequest : ICommand<TResult>` wraps commands and nothing else.
-- **Generic messages** — a message type may itself be generic; Quantix discovers each concrete
-  instantiation used in the program and emits a closed dispatch path for it.
+- **Generic messages** — a message type may itself be generic; Quantix emits a closed dispatch
+  path for each concrete instantiation it sees constructed with a concrete type, such as
+  `new GetById<Customer>(id)` or `GetById<Customer> q = new(id)`. An instantiation built inside
+  generic code (for example `Create<T>() => new GetById<T>()`) is not visible at compile time,
+  so sending it throws `QuantixException`; construct the message with a concrete type instead.
 - **Adaptive dispatch** — a type-pattern chain for small message sets, a frozen-dictionary jump
   table for large ones; the switch point is benchmark-tuned.
 - **Compile-time diagnostics** — the `QTX` diagnostic catalogue turns missing or ambiguous
