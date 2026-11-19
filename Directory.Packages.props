@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup Label="netstandard2.0 polyfills (generator)">
-    <PackageVersion Include="PolySharp" Version="1.17.0" />
+    <PackageVersion Include="PolySharp" Version="1.17.1" />
   </ItemGroup>
 
   <ItemGroup Label="Dependency injection (runtime)">
