@@ -9,6 +9,12 @@ tagging a commit `v1.0.0` produces package version `1.0.0`.
 
 ## [Unreleased]
 
+### Fixed
+
+- The NuGet package page showed the README's header image as raw HTML: nuget.org
+  renders neither HTML nor relative image paths. The header is now a Markdown
+  image with an absolute URL.
+
 ## [2.0.0] - 2026-11-20
 
 ### Fixed

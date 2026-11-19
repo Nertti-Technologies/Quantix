@@ -1,8 +1,4 @@
-<div align="center">
-
-<img src="header.png" alt="Quantix is a clean-room, Apache-2.0-licensed mediator" />
-
-</div>
+![Quantix is a clean-room, Apache-2.0-licensed mediator](https://raw.githubusercontent.com/Nertti-Technologies/Quantix/v2.0.0/header.png)
 
 > A source-generated, AOT-friendly mediator for .NET. Zero runtime reflection, linker-safe, fast.
 
