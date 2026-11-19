@@ -29,6 +29,9 @@ tagging a commit `v1.0.0` produces package version `1.0.0`.
   request and stream) wrapped only the first; and a class that was both a
   handler and a behavior lost its behavior role. Every implemented behavior
   interface is now discovered.
+- The sample's behaviors logged whole messages and results, which carry user
+  input; they now log the message type only. The sample also length-limits
+  its free-text route values and lowers ASP.NET request logging to Warning.
 
 ### Performance
 

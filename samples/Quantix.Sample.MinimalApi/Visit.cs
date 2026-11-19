@@ -21,7 +21,8 @@ public sealed class RecordVisitHandler : ICommandHandler<RecordVisit, int>
 /// <c>where TCommand : ICommand&lt;TResult&gt;</c> constraint scopes it to commands: Quantix
 /// closes it over every command at compile time and never over a query, so the unrelated
 /// <see cref="GetGreeting"/> query is left untouched. This is constraint-aware scoping
-/// (design D11) — no marker interface and no manual registration.
+/// (design D11) — no marker interface and no manual registration. Like
+/// <see cref="LoggingBehavior{TRequest, TResult}"/>, it records the command type, never its fields.
 /// </summary>
 /// <typeparam name="TCommand">The command being audited.</typeparam>
 /// <typeparam name="TResult">The result the command produces.</typeparam>
@@ -44,9 +45,10 @@ public sealed class CommandAuditBehavior<TCommand, TResult> : IPipelineBehavior<
         RequestHandlerDelegate<TResult> next,
         CancellationToken ct)
     {
-        _logger.LogInformation("Quantix: auditing command {Command}.", command);
+        string commandType = typeof(TCommand).Name;
+        _logger.LogInformation("Quantix: auditing command {CommandType}.", commandType);
         TResult result = await next(ct).ConfigureAwait(false);
-        _logger.LogInformation("Quantix: audited command {Command}.", command);
+        _logger.LogInformation("Quantix: audited command {CommandType}.", commandType);
         return result;
     }
 }

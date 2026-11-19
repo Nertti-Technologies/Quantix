@@ -17,14 +17,17 @@ builder.Services.AddQuantix();
 
 var app = builder.Build();
 
+// Free-text route values are length-limited at the boundary; a longer value matches no route
+// and returns 404 before any handler runs.
+
 // A query — returns a personalised greeting.
 app.MapGet(
-    "/greeting/{name}",
+    "/greeting/{name:maxlength(64)}",
     (string name, IMediator mediator, CancellationToken ct) => mediator.Send(new GetGreeting(name), ct));
 
 // A command with a result — records a page visit and reports the running count.
 app.MapGet(
-    "/visit/{page}",
+    "/visit/{page:maxlength(64)}",
     async (string page, IMediator mediator, CancellationToken ct) =>
         $"Visit #{await mediator.Send(new RecordVisit(page), ct)} recorded for '{page}'.");
 

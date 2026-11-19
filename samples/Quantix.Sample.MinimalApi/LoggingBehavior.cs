@@ -7,6 +7,10 @@ namespace Quantix.Sample;
 /// mediator. Quantix discovers it, closes it over each message, and registers each closed
 /// instantiation — no marker interface and no manual registration required.
 /// </summary>
+/// <remarks>
+/// It logs the message <em>type</em> only. Message fields and results carry user input (here, a
+/// visitor's name), so writing them to logs would leak personal data.
+/// </remarks>
 /// <typeparam name="TRequest">The request type being wrapped.</typeparam>
 /// <typeparam name="TResult">The result type the request produces.</typeparam>
 public sealed class LoggingBehavior<TRequest, TResult> : IPipelineBehavior<TRequest, TResult>
@@ -26,9 +30,10 @@ public sealed class LoggingBehavior<TRequest, TResult> : IPipelineBehavior<TRequ
         RequestHandlerDelegate<TResult> next,
         CancellationToken ct)
     {
-        _logger.LogInformation("Quantix: handling {Request}.", request);
+        string requestType = typeof(TRequest).Name;
+        _logger.LogInformation("Quantix: handling {RequestType}.", requestType);
         TResult result = await next(ct).ConfigureAwait(false);
-        _logger.LogInformation("Quantix: handled {Request}, result {Result}.", request, result);
+        _logger.LogInformation("Quantix: handled {RequestType}.", requestType);
         return result;
     }
 }
