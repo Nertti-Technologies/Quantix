@@ -9,7 +9,7 @@
 # uses an API newer than 4.8.0 it fails to load here and the build breaks.
 #
 # The consumer is created in a temp directory OUTSIDE the repository so the repo's
-# global.json (which pins the .NET 10 SDK) does not apply to it.
+# global.json (which pins the .NET 11 SDK) does not apply to it.
 
 set -euo pipefail
 

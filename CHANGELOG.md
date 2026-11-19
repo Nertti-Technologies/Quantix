@@ -33,6 +33,13 @@ tagging a commit `v1.0.0` produces package version `1.0.0`.
 - The navigation analyzer builds its handler map only on the first mediator
   call site in a compilation, instead of at every compilation start.
 
+### Changed
+
+- The repository builds with the .NET 11 SDK (`global.json` pins 11.0.100,
+  rolling forward to later feature bands).
+- Build tooling updated: Microsoft.NET.Test.Sdk 18.12.0, xunit 2.9.3,
+  BenchmarkDotNet 0.15.8, MinVer 8.0.0.
+
 ## [1.0.1] - 2026-05-26
 
 ### Fixed

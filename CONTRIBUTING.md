@@ -5,8 +5,8 @@ Thanks for your interest in Quantix — a source-generated, AOT-friendly mediato
 
 ## Prerequisites
 
-- The .NET SDK pinned in [`global.json`](global.json) — .NET 10.0.300, or a later
-  10.0 feature band. Install it from <https://dotnet.microsoft.com/download>.
+- The .NET SDK pinned in [`global.json`](global.json) — .NET 11.0.100, or a later
+  11.0 feature band. Install it from <https://dotnet.microsoft.com/download>.
 - To Native-AOT-publish the sample locally you also need the platform C toolchain
   (on Linux: `clang` and the `zlib` development headers).
 
